@@ -1,0 +1,22 @@
+{
+    "name": "drupalator/drupalator",
+    "description": "Multi-site Drupal security update + CISA KEV exposure reporter.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Drupalator\\": "lib/"
+        }
+    },
+    "bin": [
+        "bin/drupalator",
+        "bin/dr8r",
+        "bin/d8r"
+    ],
+    "config": {
+        "sort-packages": true
+    }
+}

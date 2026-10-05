@@ -1,0 +1,14 @@
+# Local LLM settings
+.claude
+# Local per-user agent skill memory
+.agent-skills/
+# Real customer/site config — never commit
+config/sites.json
+config/.env
+
+# Composer
+/vendor/
+composer.lock
+
+# macOS
+.DS_Store

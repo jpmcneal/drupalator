@@ -1,0 +1,28 @@
+#!/usr/bin/env php
+<?php
+/**
+ * dr8r — shortcut for `drupalator generate <customer|all>`.
+ *
+ * The generate flow (per-customer HTML + JSONC security report) is by far
+ * the most common invocation, so it gets its own two-syllable alias.
+ */
+
+$repoRoot = dirname(__DIR__);
+$argv     = $_SERVER['argv'];
+$customer = $argv[1] ?? null;
+
+if ($customer === '-h' || $customer === '--help' || $customer === 'help') {
+    fwrite(STDOUT, "Usage: dr8r <customer|all>\n\nEquivalent to: drupalator generate <customer|all>\n");
+    exit(0);
+}
+
+if ($customer === null || $customer === '') {
+    fwrite(STDERR, "Usage: dr8r <customer|all>\n");
+    exit(1);
+}
+
+$cmd = escapeshellcmd(PHP_BINARY)
+     . ' ' . escapeshellarg($repoRoot . '/bin/drupalator')
+     . ' generate ' . escapeshellarg($customer);
+passthru($cmd, $rc);
+exit($rc);

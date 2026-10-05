@@ -1,0 +1,130 @@
+#!/usr/bin/env php
+<?php
+/**
+ * drupalator — single-entry CLI wrapper for the drupalator tool.
+ *
+ * Dispatches to the underlying PHP scripts in the repo root. Keep this
+ * file flat and small: it should not contain any real logic.
+ *
+ * See also bin/dr8r, a shortcut for `drupalator generate <customer>`.
+ */
+
+$repoRoot = dirname(__DIR__);
+$argv     = $_SERVER['argv'];
+$command  = $argv[1] ?? 'help';
+
+switch ($command) {
+    case 'generate':
+        $customer = $argv[2] ?? null;
+        if ($customer === null || $customer === '') {
+            fwrite(STDERR, "Usage: drupalator generate <customer|all>\n");
+            exit(1);
+        }
+        $cmd = escapeshellcmd(PHP_BINARY)
+             . ' ' . escapeshellarg($repoRoot . '/generate_multi_site_report.php')
+             . ' ' . escapeshellarg($customer);
+        passthru($cmd, $rc);
+        exit($rc);
+
+    case 'combine':
+        $forward = array_slice($argv, 2);
+        $cmd = escapeshellcmd(PHP_BINARY)
+             . ' ' . escapeshellarg($repoRoot . '/combine_data.php');
+        foreach ($forward as $a) {
+            $cmd .= ' ' . escapeshellarg($a);
+        }
+        passthru($cmd, $rc);
+        exit($rc);
+
+    case 'email':
+        $customer = $argv[2] ?? null;
+        if ($customer === null || $customer === '') {
+            fwrite(STDERR, "Usage: drupalator email <customer>\n");
+            exit(1);
+        }
+        $phpBackend = $repoRoot . '/bin/draft-email.php';
+        if (!is_file($phpBackend)) {
+            fwrite(STDERR, "email backend missing: {$phpBackend}\n");
+            exit(2);
+        }
+        $cmd = escapeshellcmd(PHP_BINARY)
+             . ' ' . escapeshellarg($phpBackend)
+             . ' ' . escapeshellarg($customer);
+        passthru($cmd, $rc);
+        exit($rc);
+
+    case 'check':
+        $customer = $argv[2] ?? null;
+        if ($customer === null || $customer === '') {
+            fwrite(STDERR, "Usage: drupalator check <customer>\n");
+            exit(1);
+        }
+        $cmd = escapeshellcmd(PHP_BINARY)
+             . ' ' . escapeshellarg($repoRoot . '/drupal_update_checker.php')
+             . ' ' . escapeshellarg($customer);
+        passthru($cmd, $rc);
+        exit($rc);
+
+    case 'cache':
+        $sub = $argv[2] ?? null;
+        if ($sub !== 'clear' && $sub !== 'stats') {
+            fwrite(STDERR, "Usage: drupalator cache <clear|stats>\n");
+            exit(1);
+        }
+        require_once $repoRoot . '/lib/Config.php';
+        require_once $repoRoot . '/drupal_update_checker.php';
+        $config  = Drupalator\Config::load();
+        $checker = new DrupalUpdateChecker(false, $config->cacheDir());
+        if ($sub === 'stats') {
+            $stats = $checker->getCacheStats();
+            print_r($stats);
+        } else {
+            $checker->clearCache();
+        }
+        exit(0);
+
+    case 'list':
+        require_once $repoRoot . '/lib/Config.php';
+        $config = Drupalator\Config::load();
+        echo "Configured customers:\n";
+        foreach ($config->customers() as $key => $data) {
+            printf("  %-15s %s (%d sites)\n", $key, $data['name'], count($data['sites']));
+        }
+        exit(0);
+
+    case 'help':
+    case '-h':
+    case '--help':
+        printUsage();
+        exit(0);
+
+    default:
+        fwrite(STDERR, "Unknown command: {$command}\n\n");
+        printUsage(STDERR);
+        exit(1);
+}
+
+function printUsage($stream = STDOUT): void
+{
+    fwrite($stream, <<<USAGE
+drupalator <command> [args]
+
+Commands:
+  generate <customer|all>     Generate HTML + JSONC reports for a customer (or all)
+  combine [options]           Combine JSONC reports into one JSON
+                                --date=YYYY-MM-DD
+                                --customers=k1,k2
+                                --output=path
+  email <customer>            Draft/send email for a customer's latest report
+  check <customer>            Run update checker only (no report, no email)
+  cache <subcommand>          Cache management
+                                cache clear      Delete all cached items
+                                cache stats      Show cache dir + item count
+  list                        List configured customers + site counts
+  help                        Show this help
+
+Shortcut:
+  dr8r <customer|all>         Alias for `drupalator generate <customer|all>`
+
+USAGE);
+}

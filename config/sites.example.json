@@ -1,0 +1,19 @@
+{
+  "customers": {
+    "acme": {
+      "name": "Acme Corp",
+      "sites": {
+        "www": {
+          "name": "Acme Primary",
+          "url": "https://www.acme.example",
+          "drush_alias": "@acme.prod"
+        },
+        "blog": {
+          "name": "Acme Blog",
+          "url": "https://blog.acme.example",
+          "drush_alias": "@acmeblog.prod"
+        }
+      }
+    }
+  }
+}

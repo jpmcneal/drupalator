@@ -1,0 +1,11 @@
+#!/bin/bash
+# This is a shortcut for the drupalator tool to generate reports for a customer.
+
+# Get the directory of the current script (d8r)
+SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+# Navigate to the project root (assuming d8r is in bin/ within the project root)
+PROJECT_ROOT=$(dirname "$SCRIPT_DIR")
+
+# Execute drupalator with 'generate' command and pass all arguments
+exec "$PROJECT_ROOT/bin/drupalator" generate "$@"
