@@ -1,5 +1,7 @@
 # Local LLM settings
 .claude
+*_PLAN.md
+
 # Local per-user agent skill memory
 .agent-skills/
 # Real customer/site config — never commit
