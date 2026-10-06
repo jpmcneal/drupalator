@@ -18,6 +18,8 @@ use RuntimeException;
 class Config
 {
     private const VALID_EMAIL_BACKENDS = ['gws', 'sendmail', 'msmtp', 'stdout-eml'];
+    private const THEME_NAME_PATTERN = '/^[a-z0-9][a-z0-9_-]*$/';
+    private const DEFAULT_THEME = 'default';
 
     private string $repoRoot;
     private array $customers;
@@ -83,6 +85,23 @@ class Config
             );
         }
 
+        // Validate theming eagerly so misconfig fails fast at load time, before
+        // any report generation runs. Name-pattern validation already happened
+        // in validateSchema() for per-customer themes; here we check that the
+        // resolved theme files actually exist on disk, now that we have repoRoot.
+        $themeEnv = getenv('DRUPALATOR_THEME');
+        if ($themeEnv !== false && $themeEnv !== '') {
+            self::validateThemeName($themeEnv, 'DRUPALATOR_THEME environment variable');
+            if ($themeEnv !== self::DEFAULT_THEME) {
+                self::assertThemeFileExists($repoRoot, $themeEnv);
+            }
+        }
+        foreach ($customers as $custKey => $cust) {
+            if (isset($cust['theme']) && $cust['theme'] !== '' && $cust['theme'] !== self::DEFAULT_THEME) {
+                self::assertThemeFileExists($repoRoot, $cust['theme'], "customers.{$custKey}.theme");
+            }
+        }
+
         return new self($repoRoot, $sitesFile, $customers);
     }
 
@@ -138,6 +157,107 @@ class Config
             return 'Security Team';
         }
         return $val;
+    }
+
+    /**
+     * The install-wide default theme name, from DRUPALATOR_THEME.
+     * Defaults to 'default' (base CSS only) when unset/empty.
+     */
+    public function theme(): string
+    {
+        $val = getenv('DRUPALATOR_THEME');
+        if ($val === false || $val === '') {
+            return self::DEFAULT_THEME;
+        }
+        self::validateThemeName($val, 'DRUPALATOR_THEME environment variable');
+        return $val;
+    }
+
+    /**
+     * Resolve the effective theme for a customer, by precedence:
+     * customer's "theme" key (if set) > DRUPALATOR_THEME env > 'default'.
+     */
+    public function effectiveTheme(string $customerKey): string
+    {
+        $cust = $this->customer($customerKey);
+        if (isset($cust['theme']) && $cust['theme'] !== '') {
+            return $cust['theme'];
+        }
+        return $this->theme();
+    }
+
+    /**
+     * Absolute path to a non-default theme's CSS file. Do not call this for
+     * the 'default' theme — 'default' has no override file (base.css only).
+     *
+     * @throws RuntimeException if the theme name is invalid or the file is
+     *   missing/unreadable.
+     */
+    public function themePath(string $name): string
+    {
+        self::validateThemeName($name, 'theme name');
+        $path = $this->repoRoot . '/themes/' . $name . '.css';
+        if (!is_file($path) || !is_readable($path)) {
+            $available = self::scanAvailableThemes($this->repoRoot);
+            $availableList = $available === [] ? '(none)' : implode(', ', $available);
+            throw new RuntimeException(
+                "Theme CSS not found or not readable at: {$path}\n"
+                . "Available themes: {$availableList}"
+            );
+        }
+        return $path;
+    }
+
+    /**
+     * List available override theme names (basenames of themes/*.css,
+     * excluding base.css).
+     */
+    public function availableThemes(): array
+    {
+        return self::scanAvailableThemes($this->repoRoot);
+    }
+
+    private static function scanAvailableThemes(string $repoRoot): array
+    {
+        $files = glob($repoRoot . '/themes/*.css') ?: [];
+        $names = [];
+        foreach ($files as $file) {
+            $base = basename($file, '.css');
+            if ($base === 'base') {
+                continue;
+            }
+            $names[] = $base;
+        }
+        sort($names);
+        return $names;
+    }
+
+    private static function validateThemeName(string $name, string $context): void
+    {
+        if (!preg_match(self::THEME_NAME_PATTERN, $name)) {
+            throw new RuntimeException(
+                "Invalid theme name for {$context}: '{$name}'. "
+                . 'Theme names must match ' . self::THEME_NAME_PATTERN
+            );
+        }
+    }
+
+    /**
+     * @throws RuntimeException if themes/<name>.css does not exist under $repoRoot.
+     */
+    private static function assertThemeFileExists(string $repoRoot, string $name, ?string $context = null): void
+    {
+        self::validateThemeName($name, $context ?? 'theme name');
+        $path = $repoRoot . '/themes/' . $name . '.css';
+        if (!is_file($path) || !is_readable($path)) {
+            $available = self::scanAvailableThemes($repoRoot);
+            $availableList = $available === [] ? '(none)' : implode(', ', $available);
+            $label = $context !== null ? $context : "theme '{$name}'";
+            throw new RuntimeException(
+                "Theme CSS not found or not readable for {$label}, looked for: {$path}\n"
+                . "Available themes: {$availableList}"
+            );
+        }
     }
 
     public function customers(): array
@@ -229,6 +349,19 @@ class Config
             }
             if (!isset($cust['sites']) || !is_array($cust['sites'])) {
                 throw new RuntimeException("sites.json: {$path}.sites must be an object");
+            }
+            // 'theme' optional; if present, must be a valid theme name.
+            // File-existence is checked in load() once repoRoot is known.
+            if (isset($cust['theme'])) {
+                if (!is_string($cust['theme']) || $cust['theme'] === '') {
+                    throw new RuntimeException("sites.json: {$path}.theme must be a non-empty string when present");
+                }
+                if (!preg_match(self::THEME_NAME_PATTERN, $cust['theme'])) {
+                    throw new RuntimeException(
+                        "sites.json: {$path}.theme has invalid value '{$cust['theme']}'. "
+                        . 'Theme names must match ' . self::THEME_NAME_PATTERN
+                    );
+                }
             }
             foreach ($cust['sites'] as $siteKey => $site) {
                 $spath = "{$path}.sites.{$siteKey}";

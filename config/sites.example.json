@@ -2,6 +2,7 @@
   "customers": {
     "acme": {
       "name": "Acme Corp",
+      "theme": "slate",
       "sites": {
         "www": {
           "name": "Acme Primary",
