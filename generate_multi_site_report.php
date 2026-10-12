@@ -8,6 +8,7 @@
 require_once __DIR__ . '/drupal_update_checker.php';
 require_once __DIR__ . '/kev_catalog.php';
 require_once __DIR__ . '/lib/Config.php';
+require_once __DIR__ . '/icons.php';
 
 $config = Drupalator\Config::load();
 $workingDir = $config->workingDir();
@@ -168,10 +169,13 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
 
     // Add customer header
     $html .= "<div class='customer-header'>";
-    $html .= "<h1>🔒 Security Report: {$customerConfig['name']}</h1>";
+    $html .= "<div class='header-emblem'>" . getIcon('lock', 24, false) . "</div>";
+    $html .= "<div class='header-details'>";
+    $html .= "<h1>Security Report: {$customerConfig['name']}</h1>";
     $html .= "<div class='report-meta'>";
     $html .= "<p><strong>Generated:</strong> " . date('Y-m-d') . "</p>";
     $html .= "<p><strong>Sites:</strong> " . count($allResults) . "</p>";
+    $html .= "</div>";
     $html .= "</div>";
     $html .= "</div>";
 
@@ -313,7 +317,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
     foreach ($allResults as $siteKey => $siteData) {
         if (isset($siteData['error'])) {
             $html .= "<div class='site-section error'>";
-            $html .= "<h2>❌ {$siteKey} - Error</h2>";
+            $html .= "<h2>" . getIcon('circle-x') . "{$siteKey} - Error</h2>";
             $html .= "<div class='alert alert-danger'>{$siteData['error']}</div>";
             $html .= "</div>";
             continue;
@@ -325,7 +329,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         $upToDateCount = count($siteData['up_to_date'] ?? []);
 
         $html .= "<div class='site-section'>";
-        $html .= "<h2>🌐 {$siteData['site_name']}</h2>";
+        $html .= "<h2>" . getIcon('globe') . "{$siteData['site_name']}</h2>";
         $html .= "<p class='site-url'><a href='{$siteData['site_url']}' target='_blank'>{$siteData['site_url']}</a></p>";
 
         // KEV panel — shown above core alert so it's the first signal seen
@@ -333,7 +337,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         if (!empty($kevEntries)) {
             $coreVer = htmlspecialchars($siteData['core_version'] ?? 'unknown');
             $html .= "<div class='alert-kev'>";
-            $html .= "<strong>🔥 Actively Exploited (CISA KEV) — affects your core {$coreVer}</strong>";
+            $html .= "<strong>" . getIcon('flame') . "Actively Exploited (CISA KEV) — affects your core {$coreVer}</strong>";
             $html .= "<br><small class='kev-explainer'>CISA KEV is the U.S. government's list of vulnerabilities confirmed being actively exploited by attackers right now — these are the highest-priority patches.</small>";
             foreach ($kevEntries as $kev) {
                 $cveId   = htmlspecialchars($kev['cveID'] ?? '');
@@ -364,7 +368,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
 
             if ($coreHasSecurity) {
                 $html .= "<div class='alert alert-danger'>";
-                $html .= "<strong>🚨 Drupal Core Security Update Required!</strong><br>";
+                $html .= "<strong>" . getIcon('siren') . "Drupal Core Security Update Required!</strong><br>";
                 $html .= "Core: {$siteData['core_version']} → {$siteData['core_update']['latest_security_version']}";
                 $html .= "</div>";
             } elseif ($coreIsEol) {
@@ -384,14 +388,14 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
                 }
 
                 $html .= "<div class='core-status unsupported'>";
-                $html .= "Core: {$siteData['core_version']} ⚠️ (Unsupported";
+                $html .= "Core: {$siteData['core_version']} " . getIcon('triangle-alert') . "(Unsupported";
                 if ($branchList) {
                     $html .= " - Upgrade to {$branchList}";
                 }
                 $html .= ")";
                 $html .= "</div>";
             } else {
-                $html .= "<div class='core-status'>Core: {$siteData['core_version']} ✅</div>";
+                $html .= "<div class='core-status'>Core: {$siteData['core_version']} " . getIcon('circle-check-big') . "</div>";
             }
         }
 
@@ -403,7 +407,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         // Unsupported versions
         if ($unsupportedCount > 0) {
             $html .= "<div class='alert alert-warning'>";
-            $html .= "<strong>⚠️ {$unsupportedCount} Unsupported Module Version(s)</strong>";
+            $html .= "<strong>" . getIcon('triangle-alert') . "{$unsupportedCount} Unsupported Module Version(s)</strong>";
             $html .= "<ul>";
             foreach ($siteData['unsupported_versions'] as $module) {
                 $html .= "<li><strong>{$module['title']}</strong>: {$module['version']} ";
@@ -422,7 +426,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         // Security updates
         if ($securityCount > 0) {
             $html .= "<div class='alert alert-danger'>";
-            $html .= "<strong>🚨 {$securityCount} Security Update(s) Required</strong>";
+            $html .= "<strong>" . getIcon('siren') . "{$securityCount} Security Update(s) Required</strong>";
             $html .= "<ul>";
             foreach ($siteData['security_updates'] as $module) {
                 $html .= "<li><strong>{$module['title']}</strong>: {$module['version']} → ";
@@ -436,7 +440,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         // Regular updates summary
         if ($updateCount > 0) {
             $html .= "<details class='updates-summary'>";
-            $html .= "<summary>📦 {$updateCount} Regular Updates Available</summary>";
+            $html .= "<summary>" . getIcon('package') . "{$updateCount} Regular Updates Available</summary>";
             $html .= "<ul>";
             foreach ($siteData['available_updates'] as $module) {
                 $html .= "<li>{$module['title']}: {$module['version']} → ";
@@ -447,13 +451,13 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         }
 
         if ($securityCount === 0 && $updateCount === 0 && $unsupportedCount === 0) {
-            $html .= "<div class='alert alert-success'>✅ All modules up to date and compatible</div>";
+            $html .= "<div class='alert alert-success'>" . getIcon('circle-check-big') . "All modules up to date and compatible</div>";
         }
 
         $kevCount = count($siteKev[$siteKey] ?? []);
         $kevNote = $kevCount > 0
-            ? "🔥 {$kevCount} CISA KEV match(es)"
-            : "✅ CISA KEV checked: no known active exploits for this core version";
+            ? getIcon('flame', 14) . "{$kevCount} CISA KEV match(es)"
+            : getIcon('circle-check-big', 14) . "CISA KEV checked: no known active exploits for this core version";
         $html .= "<p class='site-footer'>Modules: {$siteData['total_modules']} | Checked: {$siteData['check_timestamp']} | {$kevNote}</p>";
         $html .= "</div>";
     }
