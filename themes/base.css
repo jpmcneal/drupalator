@@ -13,20 +13,20 @@
     --color-white: white;
 
     /* Header gradient */
-    --color-header-start: #667eea;
-    --color-header-end: #764ba2;
+    --color-header-start: #232c61;
+    --color-header-end: #67c8ca;
 
     /* Summary card gradients / backgrounds */
-    --color-danger-start: #ff6b6b;
-    --color-danger-end: #ee5a24;
-    --color-warning-start: #feca57;
-    --color-warning-end: #ff9ff3;
-    --color-info-start: #48dbfb;
-    --color-info-end: #0abde3;
+    --color-danger-start: #dc3545;
+    --color-danger-end: #bb2d3b;
+    --color-warning-start: #ffc107;
+    --color-warning-end: #ffe69c;
+    --color-info-start: #67c8ca;
+    --color-info-end: #232c61;
     --color-php-bg: #f2a5eb;
     --color-drupal-bg: #0678BE;
-    --color-success-start: #2ed573;
-    --color-success-end: #1dd1a1;
+    --color-success-start: #198754;
+    --color-success-end: #146c43;
     --color-kev-start: #ff4500;
     --color-kev-end: #c0392b;
 
@@ -40,7 +40,7 @@
     /* Site section */
     --color-error-border: #dc3545;
     --color-heading: #495057;
-    --color-link: #007bff;
+    --color-link: #228b94;
 
     /* Alerts */
     --color-alert-danger-bg: #f8d7da;
@@ -54,7 +54,7 @@
     --color-alert-warning-text: #856404;
 
     /* Shared neutrals */
-    --color-border-light: #e9ecef;
+    --color-border-light: #eee;
     --color-muted-text: #6c757d;
 
     /* Badges */
@@ -93,20 +93,27 @@ body {
 }
 
 .summary-card {
-    padding: 25px;
+    background: var(--color-white);
+    border: 1px solid var(--color-border-light);
     border-radius: var(--radius-card);
-    text-align: center;
     box-shadow: var(--shadow-card);
-    color: var(--color-white);
+    color: var(--color-heading);
+    min-height: 122px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 20px;
 }
 
-.summary-card.danger { background: linear-gradient(135deg, var(--color-danger-start), var(--color-danger-end)); }
-.summary-card.warning { background: linear-gradient(135deg, var(--color-warning-start), var(--color-warning-end)); }
-.summary-card.info { background: linear-gradient(135deg, var(--color-info-start), var(--color-info-end)); }
-.summary-card.php { background: var(--color-php-bg); }
-.summary-card.drupal { background: var(--color-drupal-bg); }
-.summary-card.success { background: linear-gradient(135deg, var(--color-success-start), var(--color-success-end)); }
-.summary-card.kev { background: linear-gradient(135deg, var(--color-kev-start), var(--color-kev-end)); }
+.summary-card.danger .card-number { background: linear-gradient(135deg, var(--color-danger-start), var(--color-danger-end)); }
+.summary-card.warning .card-number { background: linear-gradient(135deg, var(--color-warning-start), var(--color-warning-end)); }
+.summary-card.info .card-number { background: linear-gradient(135deg, var(--color-info-start), var(--color-info-end)); }
+.summary-card.php .card-number { background: var(--color-php-bg); }
+.summary-card.drupal .card-number { background: var(--color-drupal-bg); }
+.summary-card.success .card-number { background: linear-gradient(135deg, var(--color-success-start), var(--color-success-end)); }
+.summary-card.kev .card-number { background: linear-gradient(135deg, var(--color-kev-start), var(--color-kev-end)); }
 
 .alert-kev {
     background-color: var(--color-kev-alert-bg);
@@ -119,9 +126,17 @@ body {
 .alert-kev .kev-entry { margin: 8px 0 0 0; padding: 8px; background: var(--color-kev-entry-bg); border-radius: 4px; }
 .badge-ransomware { background-color: var(--color-ransomware-bg); color: var(--color-white); padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; font-weight: 600; margin-left: 6px; }
 
-.card-number { font-size: 3rem; font-weight: bold; margin-bottom: 10px; }
-.card-label { font-size: 1.1rem; opacity: 0.9; }
-.card-details { font-size: 0.95rem; margin-top: 12px; opacity: 0.95; line-height: 1.6; }
+.card-number {
+    order: 2;
+    color: var(--color-white);
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: 1;
+    padding: 10px 18px;
+    border-radius: 8px;
+}
+.card-label { order: 1; font-size: 1rem; color: var(--color-heading); }
+.card-details { order: 3; font-size: 0.85rem; margin-top: 4px; color: var(--color-muted-text); line-height: 1.5; text-align: center; }
 
 .kev-explainer { opacity: 0.8; }
 
