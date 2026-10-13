@@ -87,8 +87,8 @@ body {
 
 .header-emblem {
     flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+    width: 60px;
+    height: 60px;
     border-radius: 8px;
     background: linear-gradient(135deg, var(--color-header-start) 0%, var(--color-header-end) 100%);
     color: var(--color-white);
@@ -97,7 +97,7 @@ body {
     justify-content: center;
 }
 
-.header-details { display: flex; flex-direction: column; gap: 12px; flex: 1; min-width: 0; }
+.header-details { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .customer-header h1 { font-size: 1.5rem; font-weight: 600; color: var(--color-heading); margin: 0; }
 .report-meta {
     display: flex;
@@ -111,7 +111,6 @@ body {
 .icon-inline {
     display: inline-flex;
     align-items: center;
-    vertical-align: -3px;
     margin-right: 4px;
 }
 .icon-inline svg { display: block; }
@@ -181,7 +180,7 @@ body {
 
 .site-section.error { border-left: 6px solid var(--color-error-border); }
 
-.site-section h2 { margin-bottom: 15px; color: var(--color-heading); }
+.site-section h2 { color: var(--color-heading); }
 .site-url { margin-bottom: 20px; }
 .site-url a { color: var(--color-link); text-decoration: none; }
 
