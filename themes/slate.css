@@ -1,0 +1,25 @@
+/* Slate theme — neutral dark-slate header, muted cards.
+   Variables-only override: redefines base.css's :root custom properties. */
+:root {
+    --color-header-start: #334155;
+    --color-header-end: #1e293b;
+
+    --color-danger-start: #64748b;
+    --color-danger-end: #475569;
+    --color-warning-start: #94a3b8;
+    --color-warning-end: #64748b;
+    --color-info-start: #78909c;
+    --color-info-end: #546e7a;
+    --color-php-bg: #94a3b8;
+    --color-drupal-bg: #475569;
+    --color-success-start: #607d8b;
+    --color-success-end: #455a64;
+    --color-kev-start: #78350f;
+    --color-kev-end: #451a03;
+
+    --color-kev-alert-bg: #f1f5f9;
+    --color-kev-alert-border: #475569;
+    --color-kev-alert-text: #334155;
+
+    --color-link: #475569;
+}

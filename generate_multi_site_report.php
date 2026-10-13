@@ -8,6 +8,7 @@
 require_once __DIR__ . '/drupal_update_checker.php';
 require_once __DIR__ . '/kev_catalog.php';
 require_once __DIR__ . '/lib/Config.php';
+require_once __DIR__ . '/icons.php';
 
 $config = Drupalator\Config::load();
 $workingDir = $config->workingDir();
@@ -115,7 +116,8 @@ foreach ($customersToProcess as $currentType => $currentConfig) {
 
     // Generate HTML report
     echo "📊 Generating combined HTML report...\n";
-    generateMultiSiteReport($allResults, $outputFile, $currentConfig, $siteKev);
+    $effectiveTheme = $config->effectiveTheme($currentType);
+    generateMultiSiteReport($allResults, $outputFile, $currentConfig, $siteKev, $effectiveTheme);
 
     // Generate per-customer CJSON; returns the data array for the combined report
     $jsonOutputFile = "{$currentConfig['output_dir']}/{$currentType}-security-report-{$currentDate}.jsonc";
@@ -162,15 +164,18 @@ if ($customerType === 'all') {
 /**
  * Generate multi-site HTML report
  */
-function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $siteKev = []) {
-    $html = getMultiSiteHtmlTemplate();
+function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $siteKev = [], string $theme = 'default') {
+    $html = getMultiSiteHtmlTemplate($theme);
 
     // Add customer header
     $html .= "<div class='customer-header'>";
-    $html .= "<h1>🔒 Security Report: {$customerConfig['name']}</h1>";
+    $html .= "<div class='header-emblem'>" . getIcon('lock', 24, false) . "</div>";
+    $html .= "<div class='header-details'>";
+    $html .= "<h1>Security Report: {$customerConfig['name']}</h1>";
     $html .= "<div class='report-meta'>";
     $html .= "<p><strong>Generated:</strong> " . date('Y-m-d') . "</p>";
     $html .= "<p><strong>Sites:</strong> " . count($allResults) . "</p>";
+    $html .= "</div>";
     $html .= "</div>";
     $html .= "</div>";
 
@@ -312,7 +317,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
     foreach ($allResults as $siteKey => $siteData) {
         if (isset($siteData['error'])) {
             $html .= "<div class='site-section error'>";
-            $html .= "<h2>❌ {$siteKey} - Error</h2>";
+            $html .= "<h2>" . getIcon('circle-x') . "{$siteKey} - Error</h2>";
             $html .= "<div class='alert alert-danger'>{$siteData['error']}</div>";
             $html .= "</div>";
             continue;
@@ -324,7 +329,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         $upToDateCount = count($siteData['up_to_date'] ?? []);
 
         $html .= "<div class='site-section'>";
-        $html .= "<h2>🌐 {$siteData['site_name']}</h2>";
+        $html .= "<h2>" . getIcon('globe') . "{$siteData['site_name']}</h2>";
         $html .= "<p class='site-url'><a href='{$siteData['site_url']}' target='_blank'>{$siteData['site_url']}</a></p>";
 
         // KEV panel — shown above core alert so it's the first signal seen
@@ -332,8 +337,8 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         if (!empty($kevEntries)) {
             $coreVer = htmlspecialchars($siteData['core_version'] ?? 'unknown');
             $html .= "<div class='alert-kev'>";
-            $html .= "<strong>🔥 Actively Exploited (CISA KEV) — affects your core {$coreVer}</strong>";
-            $html .= "<br><small style='opacity:0.8'>CISA KEV is the U.S. government's list of vulnerabilities confirmed being actively exploited by attackers right now — these are the highest-priority patches.</small>";
+            $html .= "<strong>" . getIcon('flame') . "Actively Exploited (CISA KEV) — affects your core {$coreVer}</strong>";
+            $html .= "<br><small class='kev-explainer'>CISA KEV is the U.S. government's list of vulnerabilities confirmed being actively exploited by attackers right now — these are the highest-priority patches.</small>";
             foreach ($kevEntries as $kev) {
                 $cveId   = htmlspecialchars($kev['cveID'] ?? '');
                 $name    = htmlspecialchars($kev['vulnerabilityName'] ?? '');
@@ -363,7 +368,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
 
             if ($coreHasSecurity) {
                 $html .= "<div class='alert alert-danger'>";
-                $html .= "<strong>🚨 Drupal Core Security Update Required!</strong><br>";
+                $html .= "<strong>" . getIcon('siren') . "Drupal Core Security Update Required!</strong><br>";
                 $html .= "Core: {$siteData['core_version']} → {$siteData['core_update']['latest_security_version']}";
                 $html .= "</div>";
             } elseif ($coreIsEol) {
@@ -383,14 +388,14 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
                 }
 
                 $html .= "<div class='core-status unsupported'>";
-                $html .= "Core: {$siteData['core_version']} ⚠️ (Unsupported";
+                $html .= "Core: {$siteData['core_version']} " . getIcon('triangle-alert') . "(Unsupported";
                 if ($branchList) {
                     $html .= " - Upgrade to {$branchList}";
                 }
                 $html .= ")";
                 $html .= "</div>";
             } else {
-                $html .= "<div class='core-status'>Core: {$siteData['core_version']} ✅</div>";
+                $html .= "<div class='core-status'>Core: {$siteData['core_version']} " . getIcon('circle-check-big') . "</div>";
             }
         }
 
@@ -402,7 +407,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         // Unsupported versions
         if ($unsupportedCount > 0) {
             $html .= "<div class='alert alert-warning'>";
-            $html .= "<strong>⚠️ {$unsupportedCount} Unsupported Module Version(s)</strong>";
+            $html .= "<strong>" . getIcon('triangle-alert') . "{$unsupportedCount} Unsupported Module Version(s)</strong>";
             $html .= "<ul>";
             foreach ($siteData['unsupported_versions'] as $module) {
                 $html .= "<li><strong>{$module['title']}</strong>: {$module['version']} ";
@@ -421,7 +426,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         // Security updates
         if ($securityCount > 0) {
             $html .= "<div class='alert alert-danger'>";
-            $html .= "<strong>🚨 {$securityCount} Security Update(s) Required</strong>";
+            $html .= "<strong>" . getIcon('siren') . "{$securityCount} Security Update(s) Required</strong>";
             $html .= "<ul>";
             foreach ($siteData['security_updates'] as $module) {
                 $html .= "<li><strong>{$module['title']}</strong>: {$module['version']} → ";
@@ -435,7 +440,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         // Regular updates summary
         if ($updateCount > 0) {
             $html .= "<details class='updates-summary'>";
-            $html .= "<summary>📦 {$updateCount} Regular Updates Available</summary>";
+            $html .= "<summary>" . getIcon('package') . "{$updateCount} Regular Updates Available</summary>";
             $html .= "<ul>";
             foreach ($siteData['available_updates'] as $module) {
                 $html .= "<li>{$module['title']}: {$module['version']} → ";
@@ -446,13 +451,13 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         }
 
         if ($securityCount === 0 && $updateCount === 0 && $unsupportedCount === 0) {
-            $html .= "<div class='alert alert-success'>✅ All modules up to date and compatible</div>";
+            $html .= "<div class='alert alert-success'>" . getIcon('circle-check-big') . "All modules up to date and compatible</div>";
         }
 
         $kevCount = count($siteKev[$siteKey] ?? []);
         $kevNote = $kevCount > 0
-            ? "🔥 {$kevCount} CISA KEV match(es)"
-            : "✅ CISA KEV checked: no known active exploits for this core version";
+            ? getIcon('flame', 14) . "{$kevCount} CISA KEV match(es)"
+            : getIcon('circle-check-big', 14) . "CISA KEV checked: no known active exploits for this core version";
         $html .= "<p class='site-footer'>Modules: {$siteData['total_modules']} | Checked: {$siteData['check_timestamp']} | {$kevNote}</p>";
         $html .= "</div>";
     }
@@ -465,7 +470,9 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
 /**
  * HTML template for multi-site reports
  */
-function getMultiSiteHtmlTemplate() {
+function getMultiSiteHtmlTemplate(string $theme = 'default') {
+    $css = getThemeCss($theme);
+
     return <<<EOL
 <!DOCTYPE html>
 <html lang="en">
@@ -474,157 +481,41 @@ function getMultiSiteHtmlTemplate() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Site Security Report</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8f9fa;
-            margin: 20px;
-        }
-
-        .customer-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .customer-header h1 { font-size: 2.5rem; margin-bottom: 20px; }
-        .report-meta p { margin: 5px 0; opacity: 0.9; }
-
-        .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .summary-card {
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            color: white;
-        }
-
-        .summary-card.danger { background: linear-gradient(135deg, #ff6b6b, #ee5a24); }
-        .summary-card.warning { background: linear-gradient(135deg, #feca57, #ff9ff3); }
-        .summary-card.info { background: linear-gradient(135deg, #48dbfb, #0abde3); }
-        .summary-card.php { background: #f2a5eb; }
-        .summary-card.drupal { background: #0678BE; }
-        .summary-card.success { background: linear-gradient(135deg, #2ed573, #1dd1a1); }
-        .summary-card.kev { background: linear-gradient(135deg, #ff4500, #c0392b); }
-
-        .alert-kev {
-            background-color: #fde8e8;
-            border: 2px solid #c0392b;
-            color: #7b241c;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .alert-kev .kev-entry { margin: 8px 0 0 0; padding: 8px; background: rgba(0,0,0,0.04); border-radius: 4px; }
-        .badge-ransomware { background-color: #8e44ad; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; font-weight: 600; margin-left: 6px; }
-
-        .card-number { font-size: 3rem; font-weight: bold; margin-bottom: 10px; }
-        .card-label { font-size: 1.1rem; opacity: 0.9; }
-        .card-details { font-size: 0.95rem; margin-top: 12px; opacity: 0.95; line-height: 1.6; }
-
-        .site-section {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .site-section.error { border-left: 6px solid #dc3545; }
-
-        .site-section h2 { margin-bottom: 15px; color: #495057; }
-        .site-url { margin-bottom: 20px; }
-        .site-url a { color: #007bff; text-decoration: none; }
-
-        .alert {
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .alert-danger {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-
-        .alert-warning {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-        }
-
-        .core-status {
-            padding: 10px 15px;
-            background-color: #e9ecef;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            font-family: monospace;
-        }
-
-        .core-status.unsupported {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            font-weight: 600;
-        }
-
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: white;
-        }
-
-        .badge-danger { background-color: #dc3545; }
-        .badge-warning { background-color: #ffc107; color: #212529; }
-        .badge-info { background-color: #17a2b8; }
-
-        .updates-summary { margin: 15px 0; }
-        .updates-summary summary {
-            cursor: pointer;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-
-        .updates-summary ul { margin: 15px 0; padding-left: 20px; }
-        .updates-summary li { margin: 5px 0; }
-
-        .site-footer {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #e9ecef;
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-
-        details { cursor: pointer; }
-        summary:hover { background-color: #e9ecef; }
+{$css}
     </style>
 </head>
 <body>
 EOL;
+}
+
+/**
+ * Build the CSS to embed in the single <style> block: base.css always,
+ * followed by the named theme's override CSS (if not 'default'), each
+ * preceded by an HTML-comment marker. Reads directly from themes/ at the
+ * repo root — no @import, no <link>, no external fetches, so the report
+ * stays a single self-contained HTML file.
+ */
+function getThemeCss(string $theme = 'default'): string {
+    $themesDir = __DIR__ . '/themes';
+
+    $baseFile = $themesDir . '/base.css';
+    $baseCss = @file_get_contents($baseFile);
+    if ($baseCss === false) {
+        throw new RuntimeException("Failed to read base theme CSS at: {$baseFile}");
+    }
+
+    $css = "/* theme: default */\n" . $baseCss;
+
+    if ($theme !== 'default') {
+        $themeFile = $themesDir . '/' . $theme . '.css';
+        $themeCss = @file_get_contents($themeFile);
+        if ($themeCss === false) {
+            throw new RuntimeException("Failed to read theme CSS at: {$themeFile}");
+        }
+        $css .= "\n/* theme: {$theme} */\n" . $themeCss;
+    }
+
+    return $css;
 }
 
 /**

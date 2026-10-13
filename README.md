@@ -73,6 +73,38 @@ Field notes:
 
 Schema errors fail fast at load time with a clear message pointing at the offending path.
 
+## Report themes
+
+Customer HTML reports can be styled per customer (or per install) without forking the generator.
+
+### Model: base + override
+
+`themes/base.css` always loads — it defines the full stylesheet as `:root` CSS custom properties (colors, gradients, fonts, radii, shadows) plus the selectors that use them. An optional `themes/<name>.css` loads immediately after it, inside the same `<style>` block. Cascade order makes the theme file a pure override layer: it only needs to redefine the `:root` variables it wants to change (a few lines), though it can also override any selector directly if a deeper restyle is needed.
+
+### Precedence (highest wins)
+
+1. A customer's `"theme"` key in `config/sites.json` (sibling of `"name"` and `"sites"`).
+2. The `DRUPALATOR_THEME` env var in `config/.env`.
+3. `default` — no override file loads, base CSS only.
+
+### Naming rule
+
+Theme names must match `^[a-z0-9][a-z0-9_-]*$` and correspond to an existing `themes/<name>.css` file (the special name `default` has no file — it means base only). `Drupalator\Config` validates both the pattern and file existence at load time, before any report is generated; a bad name or a missing file fails fast with an error that lists the themes it did find under `themes/*.css`.
+
+### Adding a theme
+
+1. Copy `themes/slate.css` as a starting point.
+2. Redefine the `:root` custom properties you want to change — e.g. `--color-header-start` / `--color-header-end` (header gradient), `--color-danger-start` / `--color-danger-end` (danger summary card), `--font-body`, `--radius-card`. See `themes/base.css` for the full list of available variables.
+3. Save it as `themes/<newname>.css`.
+4. Reference it via a customer's `"theme"` key in `sites.json`, or set `DRUPALATOR_THEME=<newname>` in `config/.env`.
+
+### Self-contained-HTML constraint
+
+Reports are single, self-contained HTML files — they get emailed as attachments and printed, so they must render correctly with no network access. `getThemeCss()` in `generate_multi_site_report.php` reads `themes/base.css` (and the selected theme file, if any) straight off disk and concatenates their raw text into the one `<style>` block emitted by `getMultiSiteHtmlTemplate()`; there is no `<link>` tag and nothing fetches a URL at render or view time. Because of that, a theme file:
+
+- **Must not** use `@import` or reference any external URL/stylesheet. This is a hard rule, enforced by convention/code review, not by validation code.
+- If you violate it anyway: an `@import` line doesn't error, but it also doesn't do anything useful. It gets inlined as inert text sitting inside the `<style>` block — there's no `<link rel="stylesheet">` for the browser to resolve it against, so `@import` is simply dead weight, not a broken network fetch. Just don't rely on it; keep theme CSS fully self-contained like `themes/base.css` and `themes/slate.css`.
+
 ## Usage
 
 `drupalator help` prints:
