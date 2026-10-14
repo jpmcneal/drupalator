@@ -73,7 +73,28 @@ body {
     margin: 20px;
 }
 
+header {
+    position: relative;
+    margin: -20px -20px 30px -20px;
+    overflow: hidden;
+}
+
+#page-header {
+    padding: 3rem;
+}
+
+header .bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 .customer-header {
+    position: relative;
+    z-index: 1;
     background: var(--color-white);
     border: 1px solid var(--color-border-light);
     display: flex;
@@ -81,8 +102,36 @@ body {
     gap: 20px;
     padding: 20px;
     border-radius: var(--radius-card);
-    margin-bottom: 30px;
     box-shadow: var(--shadow-card);
+}
+
+.container {
+    margin: 0 auto;
+}
+@media (min-width: 576px) {
+  .container {
+    max-width: 540px;
+  }
+}
+@media (min-width: 768px) {
+  .container {
+    max-width: 720px;
+  }
+}
+@media (min-width: 992px) {
+  .container {
+    max-width: 960px;
+  }
+}
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
+  }
+}
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1320px;
+  }
 }
 
 .header-emblem {

@@ -168,7 +168,9 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
     $html = getMultiSiteHtmlTemplate($theme);
 
     // Add customer header
-    $html .= "<div class='customer-header'>";
+    $html .= "<header id='page-header'>";
+    $html .= "<div class='bg'></div>";
+    $html .= "<div class='customer-header container'>";
     $html .= "<div class='header-emblem'>" . getIcon('lock', 24, false) . "</div>";
     $html .= "<div class='header-details'>";
     $html .= "<h1>Security Report: {$customerConfig['name']}</h1>";
@@ -178,6 +180,7 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
     $html .= "</div>";
     $html .= "</div>";
     $html .= "</div>";
+    $html .= "</header>";
 
     // Summary cards for all sites
     $sitesWithCoreSecurity = 0;
@@ -242,6 +245,8 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         }
         $coreVersionBreakdown = implode('<br>', $breakdownLines);
     }
+
+    $html .= "<main class='container'>";
 
     $html .= "<div class='summary-cards'>";
 
@@ -462,6 +467,8 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
         $html .= "</div>";
     }
 
+    $html .= "</main>";
+
     $html .= "</body></html>";
 
     file_put_contents($outputFile, $html);
@@ -491,8 +498,9 @@ EOL;
 /**
  * Build the CSS to embed in the single <style> block: base.css always,
  * followed by the named theme's override CSS (if not 'default'), each
- * preceded by an HTML-comment marker. Reads directly from themes/ at the
- * repo root — no @import, no <link>, no external fetches, so the report
+ * preceded by an HTML-comment marker. Reads base.css from themes/ at the
+ * repo root and each theme's override from its own themes/<name>/<name>.css
+ * subdirectory — no @import, no <link>, no external fetches, so the report
  * stays a single self-contained HTML file.
  */
 function getThemeCss(string $theme = 'default'): string {
@@ -507,7 +515,7 @@ function getThemeCss(string $theme = 'default'): string {
     $css = "/* theme: default */\n" . $baseCss;
 
     if ($theme !== 'default') {
-        $themeFile = $themesDir . '/' . $theme . '.css';
+        $themeFile = $themesDir . '/' . $theme . '/' . $theme . '.css';
         $themeCss = @file_get_contents($themeFile);
         if ($themeCss === false) {
             throw new RuntimeException("Failed to read theme CSS at: {$themeFile}");

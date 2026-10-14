@@ -196,7 +196,7 @@ class Config
     public function themePath(string $name): string
     {
         self::validateThemeName($name, 'theme name');
-        $path = $this->repoRoot . '/themes/' . $name . '.css';
+        $path = $this->repoRoot . '/themes/' . $name . '/' . $name . '.css';
         if (!is_file($path) || !is_readable($path)) {
             $available = self::scanAvailableThemes($this->repoRoot);
             $availableList = $available === [] ? '(none)' : implode(', ', $available);
@@ -209,8 +209,8 @@ class Config
     }
 
     /**
-     * List available override theme names (basenames of themes/*.css,
-     * excluding base.css).
+     * List available override theme names (subdirectories of themes/
+     * containing a matching <name>.css, excluding base.css at the root).
      */
     public function availableThemes(): array
     {
@@ -219,14 +219,14 @@ class Config
 
     private static function scanAvailableThemes(string $repoRoot): array
     {
-        $files = glob($repoRoot . '/themes/*.css') ?: [];
+        $files = glob($repoRoot . '/themes/*/*.css') ?: [];
         $names = [];
         foreach ($files as $file) {
+            $dir = basename(dirname($file));
             $base = basename($file, '.css');
-            if ($base === 'base') {
-                continue;
+            if ($dir === $base) {
+                $names[] = $base;
             }
-            $names[] = $base;
         }
         sort($names);
         return $names;
@@ -243,12 +243,12 @@ class Config
     }
 
     /**
-     * @throws RuntimeException if themes/<name>.css does not exist under $repoRoot.
+     * @throws RuntimeException if themes/<name>/<name>.css does not exist under $repoRoot.
      */
     private static function assertThemeFileExists(string $repoRoot, string $name, ?string $context = null): void
     {
         self::validateThemeName($name, $context ?? 'theme name');
-        $path = $repoRoot . '/themes/' . $name . '.css';
+        $path = $repoRoot . '/themes/' . $name . '/' . $name . '.css';
         if (!is_file($path) || !is_readable($path)) {
             $available = self::scanAvailableThemes($repoRoot);
             $availableList = $available === [] ? '(none)' : implode(', ', $available);
