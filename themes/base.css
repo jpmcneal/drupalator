@@ -306,3 +306,22 @@ header .bg {
 
 details { cursor: pointer; }
 summary:hover { background-color: var(--color-border-light); }
+
+footer { margin: 30px -20px -20px -20px; }
+
+footer .footer-notice {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px;
+    background: var(--color-bg);
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--color-text);
+}
+
+footer .footer-notice + .footer-notice { margin-top: 10px; }
+footer .footer-notice svg { flex-shrink: 0; }
+footer .footer-notice p { margin: 0; }
+footer .footer-notice a,
+footer .footer-underline { color: inherit; text-decoration: underline; }

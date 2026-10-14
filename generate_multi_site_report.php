@@ -469,6 +469,13 @@ function generateMultiSiteReport($allResults, $outputFile, $customerConfig, $sit
 
     $html .= "</main>";
 
+    $html .= "<footer>";
+    $html .= "<div class='container'>";
+    $html .= "<div class='footer-notice'>" . getIcon('droplet', 16) . "<p>Drupal is a <a href='https://www.drupal.org/about/trademark' target='_blank'>registered trademark</a> of <a href='https://dri.es/' target='_blank'>Dries Buytaert</a>.</p></div>";
+    $html .= "<div class='footer-notice'>" . getIcon('settings', 16) . "<p>Drush is maintained by <a href='https://drupal.org/moshe' target='_blank'>Moshe Weitzman</a> with much help from the folks listed at <a href='https://github.com/orgs/drush-ops/people' target='_blank'>https://github.com/orgs/drush-ops/people</a>.</p></div>";
+    $html .= "</div>";
+    $html .= "</footer>";
+
     $html .= "</body></html>";
 
     file_put_contents($outputFile, $html);
