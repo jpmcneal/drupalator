@@ -105,6 +105,24 @@ class Config
         return new self($repoRoot, $sitesFile, $customers);
     }
 
+    /**
+     * Load configuration from config/.env only, skipping sites.json entirely.
+     *
+     * Used by one-off single-site scans that pass site identity (url, drush
+     * alias) via CLI flags instead of sites.json. Env-driven settings
+     * (DRUSH_PREFIX, DRUSH_SYNTAX, working/cache/reports dirs, theme) still
+     * apply normally since they only read getenv().
+     */
+    public static function loadEnvOnly(?string $repoRoot = null): self
+    {
+        $repoRoot = $repoRoot ?? dirname(__DIR__);
+        $repoRoot = rtrim($repoRoot, '/');
+
+        self::loadDotEnv($repoRoot . '/config/.env');
+
+        return new self($repoRoot, '', []);
+    }
+
     public function workingDir(): string
     {
         $val = getenv('DRUPALATOR_WORKING_DIR');

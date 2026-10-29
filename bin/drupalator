@@ -92,6 +92,16 @@ switch ($command) {
         }
         exit(0);
 
+    case 'oneoff':
+        $forward = array_slice($argv, 2);
+        $cmd = escapeshellcmd(PHP_BINARY)
+             . ' ' . escapeshellarg($repoRoot . '/scan_one_off.php');
+        foreach ($forward as $a) {
+            $cmd .= ' ' . escapeshellarg($a);
+        }
+        passthru($cmd, $rc);
+        exit($rc);
+
     case 'help':
     case '-h':
     case '--help':
@@ -117,6 +127,8 @@ Commands:
                                 --output=path
   email <customer>            Draft/send email for a customer's latest report
   check <customer>            Run update checker only (no report, no email)
+  oneoff --url=<url> --alias=<drush_alias> [--name=<name>] [--uri=<uri>] [--output-dir=<path>]
+                                Run a single ad-hoc scan, bypassing sites.json
   cache <subcommand>          Cache management
                                 cache clear      Delete all cached items
                                 cache stats      Show cache dir + item count
